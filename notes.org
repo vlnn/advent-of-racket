@@ -1,0 +1,68 @@
+#+TITLE: notes
+* How to run racket inside the org file
+I expect to be able to run some racket code from inside of org files. Let's try:
+
+#+BEGIN_SRC racket :results value
+(define (fac n)
+  (if (= n 1)
+      1
+      (* n (fac
+            (sub1 n)))))
+
+(fac 4)
+#+END_SRC
+
+#+RESULTS:
+
+This should be it: press C-c C-c on block of the source and it will be
+evaluated.
+
+In order to add new src block enter C-c C-, s
+
+#+begin_src racket
+#lang racket
+3
+#+end_src
+
+#+RESULTS:
+: 3
+* How to make simple DSL in Racket
+(/from: https://beautifulracket.com/stacker//)
+There are two parts of DSL:
+1. *Reader* converting the src of DSL from the string into S-exprs;
+2. *Expander* determining how to evaluate those S-exprs.
+So we will need at least three different languages in same project (Reader,
+Expander and DSL source itself).
+** How to write several languages in one file:
+Install multi-file-lang in DrRacket, and you may speak several languages with
+same throat as easy as:
+
+#+begin_src racket
+#lang multi-file
+#file a.rkt
+#lang racket/base
+(provide x f)
+(define x 3)
+(define (f x) (string-append "hello" (make-string x #\!)))
+#file b.rkt
+#lang racket/base
+(require "a.rkt")
+(f x)
+#+end_src
+
+#+RESULTS:
+: #file a.rkt
+: #file b.rkt
+: "hello!!!"
+** Simple parser for numbers divided with commas:
+#+begin_src racket
+#lang multi-file
+#file reader.rkt
+#file extender.rkt
+#lang racket
+0
+#+end_src
+
+#+RESULTS:
+: #file extender.rkt
+: 0
