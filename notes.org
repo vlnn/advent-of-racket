@@ -26,6 +26,7 @@ In order to add new src block enter C-c C-, s
 
 #+RESULTS:
 : 3
+
 * How to make simple DSL in Racket
 (/from: https://beautifulracket.com/stacker//)
 There are two parts of DSL:
@@ -33,6 +34,7 @@ There are two parts of DSL:
 2. *Expander* determining how to evaluate those S-exprs.
 So we will need at least three different languages in same project (Reader,
 Expander and DSL source itself).
+
 ** How to write several languages in one file:
 Install multi-file-lang in DrRacket, and you may speak several languages with
 same throat as easy as:
@@ -54,15 +56,43 @@ same throat as easy as:
 : #file a.rkt
 : #file b.rkt
 : "hello!!!"
+
 ** Simple parser for numbers divided with commas:
+
 #+begin_src racket
+; several different files in same src block
 #lang multi-file
-#file reader.rkt
-#file extender.rkt
-#lang racket
-0
+
+; intcode-reader transforms text src into S-expressions
+#file intcode-reader.rkt
+#lang br/quicklang
+
+(define (read-syntax path port)
+  (define src-lines (port->lines port))
+  (define src-datums (format-datums '(handle ~a) src-lines))
+  (define module-datum `(module intcode-module "intcode-reader.rkt"
+                          ,@src-datums))
+  (datum->syntax #f module-datum))
+(provide read-syntax)
+
+; extender handles the src converted into S-expressions
+(define-macro (stacker-module-begin HANDLE-EXPR ...)
+  #'(#%module-begin
+     'HANDLE-EXPR ...))
+(provide (rename-out [stacker-module-begin #%module-begin]))
+
+(define (handle [arg #f])
+  arg)
+(provide handle)
+
+; intcode-src includes all the intcode sources
+#file intcode-src.rkt
+#lang reader "intcode-reader.rkt"
+23,22,33,1,2,3
 #+end_src
 
 #+RESULTS:
-: #file extender.rkt
-: 0
+: #file intcode-reader.rkt
+: #file intcode-src.rkt
+: '(handle)
+: '(handle 23 ,22 ,33 ,1 ,2 ,3)
